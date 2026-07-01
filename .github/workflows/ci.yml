@@ -17,7 +17,7 @@ jobs:
 
       - name: docker up && install dependencies
         run: |
-          docker compose run --rm php install \
+          docker compose run --rm php composer install \
           --no-ansi --no-interaction --no-progress --no-scripts --prefer-dist
 
 #      - name: run tests
