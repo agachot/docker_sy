@@ -1,6 +1,6 @@
 name: ci.yml
 on:
-  pull_request:
+  push:
     branches:
       - "dev"
 
@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Checkoout
+      - name: Checkout
         uses: actions/checkout@v7
 
       - name: build docker
@@ -17,7 +17,7 @@ jobs:
 
       - name: docker up && install dependencies
         run: |
-          docker compose run -rm php_composer install \
+          docker compose run --rm php_composer install \
           --no-ansi --no-interaction --no-progress --no-scripts --prefer-dist
 
 #      - name: run tests
