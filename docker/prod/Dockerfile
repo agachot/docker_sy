@@ -1,16 +1,13 @@
 FROM composer:2 AS vendor
-
 WORKDIR /symfony
-
-COPY symfony/composer.json symfony/composer.lock symfony/symfony.lock* ./
+COPY symfony/composer.json symfony/composer.lock symfony/symfony.lock ./
 
 RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader
 
 FROM php:8.4-fpm-alpine3.24
 
-
 RUN apk add --no-cache libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql opcache \
+    && docker-php-ext-install pdo pdo_pgsql opcache
 
 WORKDIR /var/www/symfony
 
@@ -28,5 +25,5 @@ USER www-data
 
 EXPOSE 9000
 
-
-
+#demarre le serveur de symfony.
+#CMD ["php-fpm"]
