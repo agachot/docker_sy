@@ -1,10 +1,11 @@
-name: cd.yml
+name: cd
 on:
   push:
     branches:
       - prod
     tags:
       - 'v*.*.*'
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -15,28 +16,29 @@ jobs:
     permissions:
       contents: read
       packages: write
+
     steps:
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v7
 
-      - name: Set lowercase
-        run: echo "IMAGE_NAME=$(echo ${{env.IMAGE_NAME}} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      - name: set lowercase IMAGE name
+        run: echo "IMAGE_NAME_LC=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v1
+      - name: log ghcr
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: docker meta
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=tag,prefix=v
+            type=sha,prefix=sha-
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -45,13 +47,16 @@ jobs:
       - name: Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
+      - name: build and push docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: docker/prod/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Image
-        run: echo "image push with digest ${{ steps.meta.outputs.digest }}"
+        run: echo "Image push with digest ${{ steps.meta.outputs.digest }}"
