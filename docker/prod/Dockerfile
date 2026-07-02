@@ -16,7 +16,11 @@ COPY --from=vendor /symfony/vendor ./vendor
 COPY symfony/ .
 
 RUN composer dump-autoload --no-dev --optimize
-RUN php bin/console cache:clear --env=prod --no-debug || true
+
+RUN --mount=type=secret,id=database_url \
+    DATABASE_URL=$(cat /run/secrets/database_url) \
+    php bin/console cache:clear --env=prod --no-debug || true
+
 
 RUN mkdir -p var/cache var/log
 RUN chown -R www-data:www-data var

@@ -57,6 +57,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          secrets: |
+            database_url=${{ secrets.DATABASE_URL }}
 
       - name: Image
         run: echo "Image push with digest ${{ steps.meta.outputs.digest }}"
