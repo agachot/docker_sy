@@ -44,6 +44,12 @@ jobs:
             type=semver,pattern={{major}}
             type=ref,event=branch
 
+      - name: Write .env on server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          ssh user@serveur "echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}' > /path/app/.env.prod.local"
+
       - name: Buildx
         uses: docker/setup-buildx-action@v3
 
