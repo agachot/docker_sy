@@ -2,7 +2,7 @@ name: cd
 on:
   push:
     branches:
-      - prod
+      - prodddddddddddddddddd
     tags:
       - 'v*.*.*'
 
@@ -44,12 +44,6 @@ jobs:
             type=semver,pattern={{major}}
             type=ref,event=branch
 
-      - name: Write .env on server
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          ssh user@serveur "echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}' > /path/app/.env.prod.local"
-
       - name: Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -63,8 +57,56 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          secrets: |
-            database_url=${{ secrets.DATABASE_URL }}
 
       - name: Image
         run: echo "Image push with digest ${{ steps.meta.outputs.digest }}"
+
+  deployed:
+    needs:
+      - build-and-push-on-ghcr
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+
+      - name: copy docker compose
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrects.SSH_USER }}
+          #                key: ${{ secrets.SSH_KEY }}
+          #                password: $ {{secrets.SSH_PASS }}
+          source: "docker-compose.yml,docker/prod"
+          #                chemin depend des datacenters ou serveurs
+          target: "httpdocs/app"
+
+      - name: add .env and deployed
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrects.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd httpdocs/app
+            rm -f .env
+            cat > .env <<EOF
+            POSTGRES_USER=${{ secrets.PROD_POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.PROD_POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.PROD_POSTGRES_DB }}
+            DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}
+            SYMFONY_SECRETS=${{ secrets.PROD_SYMFONY_SECRETS }}
+            APP_ENV=${{ vars.PROD_ENV }}
+            EOF
+            
+            echo "${{ secrets.GITHUB_TOKEN }}" || docker login ghcr.io ${{ github.actor }} --password-stdin
+            
+            docker compose down 
+            
+            docker compose pull
+            
+            docker compose up -d --force-recreate --remove-orphans app
+            
+            docker compose up -d --remove-orphans
+            
+            docker image prune --f
