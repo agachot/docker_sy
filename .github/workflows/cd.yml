@@ -33,7 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=tag,prefix=v
@@ -49,7 +49,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: /docker/prod/Dockerfile
+          file: docker/prod/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
